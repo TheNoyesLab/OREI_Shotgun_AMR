@@ -29,68 +29,86 @@ amr_classification<-amr %>% separate_wider_delim(cols = gene_accession,delim='|'
                                                  names = c("accession","type" ,"class", "mechanism","group"),too_many="merge")
 amr_classification<-as.data.frame(amr_classification)
 
-#Manually fix bugged Rifampin
-amr_classification$group[amr_classification$accession=="MEG_8674"]<-
-  paste0(amr_classification$accession[amr_classification$accession=="MEG_8674"],"|RequiresSNPConfirmation")
-
-#Exclude low sensitivity SNP confirmed AMR
-amr_classification<-amr_classification[!grepl("RequiresSNPConfirmation",amr_classification$group),]
-#View(amr_classification)
 
 
+View(amr_classification)
+
+#####
+#####BEGIN DATA CLEANING AND EXCLUSION FUNCTION
+#####
+clean_and_exclude<- function(amr_class,DIMfilter){
+  
+  class_cols<-c("accession","type","class","mechanism","group") #classification columns to keep
+  
+  ###SNP Confirmation issues
+  #Manually fix bugged Rifampin
+  amr_class$group[amr_class$accession=="MEG_8674"]<-
+    paste0(amr_class$accession[amr_class$accession=="MEG_8674"],"|RequiresSNPConfirmation")
+  
+  #Exclude low sensitivity SNP confirmed AMR
+  amr_class<-amr_class[!grepl("RequiresSNPConfirmation",amr_class$group),]
+
+  
+  ###Naming schemes
+  #Keep only real USDA samples, no controls
+  amr_class<-amr_class[,colnames(amr_class) %in% class_cols | grepl("USDA",colnames(amr_class))]
+
+  #Reformat names to match metadata
+  colnames(amr_class)<-gsub("(USDA\\d+)_.*",'\\1',colnames(amr_class))
+  #sum(colnames(amr_class) %in% metadata$SampleId) == dim(amr_class)[2] #Confirm matching sample_ids
+
+  
+  ###Filter on DIM 
+  if (DIMfilter == T){  #Days in Milk after birth
+    new_DIM<-metadata$SampleId[metadata$DIM>0]               #List of IDs
+    amr_class<-amr_class[,colnames(amr_class) %in% class_cols | colnames(amr_class) %in% new_DIM]  #Keep columns if in filtered list
+    
+  } else{ #Days in milk before birth
+    new_DIM<-metadata$SampleId[metadata$DIM<=0]              #List of IDs
+    amr_class<-amr_class[,colnames(amr_class) %in% class_cols | colnames(amr_class) %in% new_DIM]  #Keep columns if in filtered list
+  } 
 
 
+  ###Exclude 0-read samples
+  zerocol<-which(colSums(amr_class[,6:dim(amr_class)[2]])==0) #vector of 0 columns 
+  amr_class<-amr_class[, -(zerocol+5) ] #Remove 0 columns, shift 5 to match columns
+  #Find a way to operationalize this
 
-#Filter on DIM
-#Join on metadata for Days in Milk and Case/Control
-#amr_classification<-amr_classification %>% left_join(metadata[c("SampleId","CaseOrControl","DIM")],by=c("SampleId") ) %>%
-#  filter(DIM>0) %>% select(-SampleId,-CaseOrControl)
-#View(amrdf_meta)
+  return(amr_class)
+  #sum(colSums(amr_classification[,6:dim(amr_classification)[2]])==0)
+  #View(amr_classification)
+  #Check on any 0 counts
+  #colnames(amr)[colSums(as.matrix(amr[,2:dim(amr)[2]]))==0]
+  #amr_classification[rowSums(amr_classification[,6:dim(amr_classification)[2]])==0,5])
+
+}
 
 
-###Exclude 0-read samples
-zerocol<-which(colSums(amr_classification[,6:dim(amr_classification)[2]])==0) #vector of 0 columns 
-amr_classification<-amr_classification[, -(zerocol+5) ] #Remove 0 columns, shift 5 to match columns
-#Find a way to operationalize this
-
-sum(colSums(amr_classification[,6:dim(amr_classification)[2]])==0)
-#View(amr_classification)
-#Check on any 0 counts
-#colnames(amr)[colSums(as.matrix(amr[,2:dim(amr)[2]]))==0]
-#amr_classification[rowSums(amr_classification[,6:dim(amr_classification)[2]])==0,5])
-
-#View(amr_classification)
 
 #####
 #####BEGIN COUNT PROCESSING FUNCTION
 #####
 class_process<- function(x) {
-  
+
   ###Group by and sum according to classification of AMR
   #Agg ***sum*** accross classifications is correct
   mechsums<-aggregate(.~mechanism,data=x[,c(4,6:dim(x)[2])],FUN=sum)
   classsums<-aggregate(.~class,data=x[,c(3,6:dim(x)[2])],FUN=sum)
   groupsums<-aggregate(.~group,data=x[,c(5,6:dim(x)[2])],FUN=sum)
+  
+  #Convert column to rowname, delete columns
   rownames(mechsums)<-mechsums$mechanism
   rownames(classsums)<-classsums$class
   rownames(groupsums)<-groupsums$group
+  mechsums<- mechsums %>% dplyr::select(-c(mechanism))
+  classsums<- classsums %>% dplyr::select(-c(class))
+  groupsums<- groupsums %>% dplyr::select(-c(group))
   
   #mechsums<-rowsum(amr_classification[,c(6:dim(amr_classification)[2])],group=amr_classification$mechanism);dim(mechsums) #Sum of counts by mech
   #classsums<-rowsum(amr_classification[,c(6:dim(amr_classification)[2])],group=amr_classification$class);dim(classsums) #Sum of counts by class
   #groupsums<-rowsum(amr_classification[,c(6:dim(amr_classification)[2])],group=amr_classification$group);dim(groupsums) #Sum of counts by group
   
   
-  ###Data cleaning and exclusion
-  #Keep only real USDA samples, no controls
-  #***Move this up before function -- perform on amr_classfication
-  mechsums<-mechsums[,grepl("USDA",colnames(mechsums))] #Keep only real samples
-  classsums<-classsums[,grepl("USDA",colnames(classsums))]     
-  groupsums<-groupsums[,grepl("USDA",colnames(groupsums))]
-  
-  #Reformat names to match metadata
-  colnames(mechsums)<-gsub("(USDA\\d+)_.*",'\\1',colnames(mechsums))
-  colnames(classsums)<-gsub("(USDA\\d+)_.*",'\\1',colnames(classsums))
-  colnames(groupsums)<-gsub("(USDA\\d+)_.*",'\\1',colnames(groupsums))
   
   ###Remove 0 counts
   mechsums<-mechsums[rowSums(mechsums)!=0,]
@@ -113,13 +131,18 @@ class_process<- function(x) {
   
 }
 
-amr_list<-class_process(amr_classification)
 
 
+
+
+
+amr_class_clean_pre<-clean_and_exclude(amr_classification,F)
+amr_class_clean_post<-clean_and_exclude(amr_classification,T)
+amr_list<-class_process(amr_class_clean_pre)
 
 ################################END OBJECT CREATION SECTION
 
-#View(amr_list$class)
+
 
 
 
@@ -188,7 +211,6 @@ ggplot(data=top_10,aes(x=FarmCase,y=count,fill=amr)) +
 
 
 ################################START ALDEX2 SECTION
-amr<-"mechanism"
 aldex_amr<- function(amr_list,amr) {
   
   amrdf<-amr_list[[amr]] #Call data for the type of amr
@@ -206,18 +228,18 @@ aldex_amr<- function(amr_list,amr) {
   #Transpose class dataframe and exclude SampleId column
   aldex_classdf<-t( amrdf[-c(which(colnames(amrdf) == "SampleId"))] )
   
-  class.aldex <- aldex(aldex_classdf, CorC$CaseOrControl, mc.samples=25, test="t", effect=TRUE, 
+  class.aldex <- aldex(aldex_classdf, CorC$CaseOrControl, mc.samples=128, test="t", effect=TRUE, 
                        include.sample.summary=FALSE, denom="all", verbose=FALSE, paired.test=T, gamma=NULL)
   
   
   #Plot 3 significance testing graphs
   par(mfrow=c(1,3))
   aldex.plot(class.aldex, type="MA", test="welch", xlab="Log-ratio abundance",
-             ylab="Difference", main='Bland-Altman plot' )
+             ylab="Difference", main='Bland-Altman plot',called.cex = 3 )
   aldex.plot(class.aldex, type="MW", test="welch", xlab="Dispersion",
-             ylab="Difference", main='Effect plot')
+             ylab="Difference", main='Effect plot',called.cex = 3)
   aldex.plot(class.aldex, type="volcano", test="welch", xlab="Difference",
-             ylab="-1(log10(q))", main= 'Volcano plot',ylim = c(0,1.5),xlim = c(-2,2))  #volcano plot
+             ylab="-1(log10(q))", main= 'Volcano plot',ylim = c(0,1.5),xlim = c(-2,2),called.cex = 3)  #volcano plot
   #mtext(paste(toupper(amr),"Signficance Plots"), side = 3,line=2, outer = TRUE)     #Add title with amr type
   
   
