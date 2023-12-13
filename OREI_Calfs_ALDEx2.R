@@ -247,10 +247,25 @@ amr_clr<-lapply(amr_list,function(x) as.data.frame(clr(x)) )
 #Apply PCA to clr-transformed data
 amr_pca<-lapply(amr_clr,function(x) prcomp(x)) #use only numeric values
 
+#Relevant loadings: 
+loadingvec<-c("Copper_resistance_protein","Lincosamide_nucleotidyltransferases","Iron_resistance_protein","Tetracycline_resistance_ribosomal_protection_proteins","RNA-polymerase_binding_protein",
+              "Drug_and_biocide_SMR_efflux_pumps","Drug_and_biocide_RND_efflux_pumps","Tetracycline_resistance_MFS_efflux_pumps","Multi-metal_resistance_protein","Sulfonamide-resistant_dihydropteroate_synthases")
 
-autoplot(amr_pca$mechanism,data = amr_meta$mechanism,colour = "DIM") +
-  scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") +
+
+#PCA plot with loadings
+p<-autoplot(amr_pca$mechanism,data = amr_meta$mechanism,colour = "DIM",
+            loadings=T,loadings.label=T,loadings.size=0.1,loadings.label.size=2,loadings.color="blue",loadings.label.color="black") +
+  scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") + theme_minimal() +
   facet_wrap(~FarmId)
+
+#Keep only the top 5 loadings
+p$layers[[2]]$data<-p$layers[[2]]$data[loadingvec,]
+p$layers[[3]]$data<-p$layers[[3]]$data[loadingvec,]
+#Change loading width
+p$layers[[2]]$aes_params$size <- 0.2
+p
+
+#Other autoplots sans loadings
 autoplot(amr_pca$class,data = amr_meta$class,colour = "DIM") +
   scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") +
   facet_wrap(~FarmId)
@@ -258,10 +273,12 @@ autoplot(amr_pca$group,data = amr_meta$group,colour = "DIM") +
   scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") +
   facet_wrap(~FarmId)
 
+
 #Editors note:
 #Chris used negative binomial model to associate S. aureus vs other taxa
 #Also used the model w/emmeans to calculate *adjusted OTU abundances* How? What does this mean?
 #Came up with adjusted richness/diversity metrics
+
 
 
 #######################PERMANOVA
