@@ -1,6 +1,7 @@
 library(ggfortify)
 #library(compositions)
 library(stats)
+library(compositions)
 library(DESeq2)
 #install.packages("BiocManager")
 library(BiocManager)
@@ -15,6 +16,7 @@ library(ALDEx2)
 library(ggpubr)
 #install.packages("ggplotify")
 library(ggplotify)
+library(vegan)
 
 
 
@@ -59,14 +61,14 @@ clean_and_exclude<- function(amr_class,DIMfilter){
 
   
   ###Filter on DIM 
-  if (DIMfilter == T){  #Days in Milk after birth
+  if (DIMfilter == "after"){  #Days in Milk after birth
     new_DIM<-metadata$SampleId[metadata$DIM>0]               #List of IDs
     amr_class<-amr_class[,colnames(amr_class) %in% class_cols | colnames(amr_class) %in% new_DIM]  #Keep columns if in filtered list
     
-  } else{ #Days in milk before birth
+  } else if(DIMfilter == "before"){ #Days in milk before birth
     new_DIM<-metadata$SampleId[metadata$DIM<=0]              #List of IDs
     amr_class<-amr_class[,colnames(amr_class) %in% class_cols | colnames(amr_class) %in% new_DIM]  #Keep columns if in filtered list
-  } 
+  } else if(DIMfilter =="all"){}
 
 
   ###Exclude 0-read samples
@@ -136,9 +138,11 @@ class_process<- function(x) {
 
 
 
-amr_class_clean_pre<-clean_and_exclude(amr_classification,F)
-amr_class_clean_post<-clean_and_exclude(amr_classification,T)
-amr_list<-class_process(amr_class_clean_pre)
+amr_class_clean_pre<-clean_and_exclude(amr_classification,"before")
+amr_class_clean_post<-clean_and_exclude(amr_classification,"after")
+amr_class_clean_all<-clean_and_exclude(amr_classification,"all")
+
+amr_list<-class_process(amr_class_clean_all)
 
 ################################END OBJECT CREATION SECTION
 
@@ -208,6 +212,80 @@ ggplot(data=top_10,aes(x=FarmCase,y=count,fill=amr)) +
 
 
 
+#####
+#####GRAB METADATA
+#####
+#Note that you really only need one copy of the metadata... But I did 3 anyways
+
+amr_meta<-amr_list #Rename use in loop
+
+#Add sample_id to each dataset
+for(i in names(amr_meta)) {
+  amr_meta[[i]]$SampleId<-rownames(amr_meta[[i]])
+}
+
+#Merge to grab metadata
+amr_meta<-lapply(amr_meta,function(x){ left_join(x,metadata[c("SampleId","CaseOrControl","FarmId","DIM","Batch")],by="SampleId") %>%
+      dplyr::select("SampleId","CaseOrControl","FarmId","DIM","Batch") %>%  #keep only metadata
+      column_to_rownames("SampleId") }  #Add rownames back
+                   )
+
+
+
+
+
+
+
+
+#####
+#####START PCA SECTION
+#####
+
+###Apply CLR normalization to amr object
+amr_clr<-lapply(amr_list,function(x) as.data.frame(clr(x)) )
+
+#Apply PCA to clr-transformed data
+amr_pca<-lapply(amr_clr,function(x) prcomp(x)) #use only numeric values
+
+
+autoplot(amr_pca$mechanism,data = amr_meta$mechanism,colour = "DIM") +
+  scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") +
+  facet_wrap(~FarmId)
+autoplot(amr_pca$class,data = amr_meta$class,colour = "DIM") +
+  scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") +
+  facet_wrap(~FarmId)
+autoplot(amr_pca$group,data = amr_meta$group,colour = "DIM") +
+  scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") +
+  facet_wrap(~FarmId)
+
+#Editors note:
+#Chris used negative binomial model to associate S. aureus vs other taxa
+#Also used the model w/emmeans to calculate *adjusted OTU abundances* How? What does this mean?
+#Came up with adjusted richness/diversity metrics
+
+
+#######################PERMANOVA
+#prcomp used for running PCA
+#Aitchison Distance matrix was computed using the vegdist function in ‘vegan’
+#Aitchison distance matrix (euclidean distance of a centered-log ratio scaled abundance matrix) was computed and used as input to the adonis function in the ‘vegan’ package.
+#test if the differences between time period distance were greater than those within-time distances using the adonis function in ‘vegan’
+
+amr_dist<-lapply(amr_list, function(x) vegdist(as.data.frame(clr(x)),method="euclidean") )
+
+amr_test<-lapply(amr_dist,function(x) adonis2(x ~ DIM + CaseOrControl + FarmId + Batch,data=amr_meta$mechanism,method = "aitchison",parallel=4))
+
+#Adonis PERMANOVA test results
+amr_test$mechanism
+amr_test$class
+amr_test$group
+
+#All independent variables are significant
+#FarmId explains roughly 8% of variance
+#DIM explains roughly 0.5-0.6% of variance
+#CaseOrControl explains roughly 0.3% of variance
+#Minimal batch effects
+
+
 
 
 ################################START ALDEX2 SECTION
@@ -271,7 +349,11 @@ ggarrange(p,q,r,labels=c("Class","Mech","Group"),nrow = 3)
 #View(class_agg_long)
 
 
-#######################PERMANOVA
-#Aitchison Distance matrix was computed using the vegdist function in ‘vegan’
-#Aitchison distance matrix (euclidean distance of a centered-log ratio scaled abundance matrix) was computed and used as input to the adonis function in the ‘vegan’ package.
-#test if the differences between time period distance were greater than those within-time distances using the adonis function in ‘vegan’
+
+
+
+
+
+
+
+
