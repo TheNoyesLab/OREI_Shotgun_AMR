@@ -33,7 +33,7 @@ amr_classification<-as.data.frame(amr_classification)
 
 
 
-View(amr_classification)
+#View(amr_classification)
 
 #####
 #####BEGIN DATA CLEANING AND EXCLUSION FUNCTION
@@ -61,14 +61,14 @@ clean_and_exclude<- function(amr_class,DIMfilter){
 
   
   ###Filter on DIM 
-  if (DIMfilter == "after"){  #Days in Milk after birth
-    new_DIM<-metadata$SampleId[metadata$DIM>0]               #List of IDs
-    amr_class<-amr_class[,colnames(amr_class) %in% class_cols | colnames(amr_class) %in% new_DIM]  #Keep columns if in filtered list
-    
-  } else if(DIMfilter == "before"){ #Days in milk before birth
-    new_DIM<-metadata$SampleId[metadata$DIM<=0]              #List of IDs
-    amr_class<-amr_class[,colnames(amr_class) %in% class_cols | colnames(amr_class) %in% new_DIM]  #Keep columns if in filtered list
-  } else if(DIMfilter =="all"){}
+  # if (DIMfilter == "after"){  #Days in Milk after birth
+  #   new_DIM<-metadata$SampleId[metadata$DIM>0]               #List of IDs
+  #   amr_class<-amr_class[,colnames(amr_class) %in% class_cols | colnames(amr_class) %in% new_DIM]  #Keep columns if in filtered list
+  #   
+  # } else if(DIMfilter == "before"){ #Days in milk before birth
+  #   new_DIM<-metadata$SampleId[metadata$DIM<=0]              #List of IDs
+  #   amr_class<-amr_class[,colnames(amr_class) %in% class_cols | colnames(amr_class) %in% new_DIM]  #Keep columns if in filtered list
+  # } else if(DIMfilter =="all"){}
 
 
   ###Exclude 0-read samples
@@ -126,6 +126,7 @@ class_process<- function(x) {
   class_t<-as.data.frame(t(classsums) )
   group_t<-as.data.frame(t(groupsums) )
   
+  #Put into object
   mat_list<-list(mech_t,class_t,group_t)
   names(mat_list)<-c("mechanism","class","group")
   
@@ -138,11 +139,47 @@ class_process<- function(x) {
 
 
 
-amr_class_clean_pre<-clean_and_exclude(amr_classification,"before")
-amr_class_clean_post<-clean_and_exclude(amr_classification,"after")
+#amr_class_clean_pre<-clean_and_exclude(amr_classification,"before")
+#amr_class_clean_post<-clean_and_exclude(amr_classification,"after")
 amr_class_clean_all<-clean_and_exclude(amr_classification,"all")
 
 amr_list<-class_process(amr_class_clean_all)
+
+
+
+
+#####
+#####GRAB FULL METADATA
+#####
+
+amr_meta<-amr_list$mechanism #Rename use in loop
+
+amr_meta$SampleId<-rownames(amr_meta)
+
+amr_meta<-left_join(amr_meta,metadata[c("SampleId","CaseOrControl","FarmId","DIM","Batch")],by="SampleId") %>%
+  dplyr::select("SampleId","CaseOrControl","FarmId","DIM","Batch") %>%  #keep only metadata
+  column_to_rownames("SampleId") %>%
+  mutate("Calving" = ifelse(DIM>=0,"Postnatal","Prenatal"))
+
+#Confirm metadata is in same order, identical rownames regardless of type
+#identical(rownames(amr_list$class),rownames(amr_meta))
+
+
+
+
+
+#####
+#####SPLIT DATA INTO FARMS
+#####
+amr_farm<-lapply(amr_list,function(x) split(x,amr_meta$FarmId) )    #Split counts
+amr_farm_meta<-split(amr_meta,amr_meta$FarmId)   #Split metadata
+
+#Confirm metadata is in same order, identical rownames regardless of type, Farm
+#identical(rownames(amr_farm$mechanism$`Farm A`),rownames(amr_farm_meta$'Farm A'))
+#identical(rownames(amr_farm$class$`Farm B`),rownames(amr_farm_meta$'Farm B'))
+
+
+
 
 ################################END OBJECT CREATION SECTION
 
@@ -151,8 +188,15 @@ amr_list<-class_process(amr_class_clean_all)
 
 
 
-################################START BARPLOT SECTION
-####Maybe start function here, input is class_process object
+
+
+
+
+
+
+
+################################START BARPLOT SECTION -- WHOLE DATASET
+####Maybe start function here, input is FULL class_process object
 
 ###Merge transposed dataset with metadata
 amr_list$class$SampleId<-rownames(amr_list$class)
@@ -212,23 +256,6 @@ ggplot(data=top_10,aes(x=FarmCase,y=count,fill=amr)) +
 
 
 
-#####
-#####GRAB METADATA
-#####
-#Note that you really only need one copy of the metadata... But I did 3 anyways
-
-amr_meta<-amr_list #Rename use in loop
-
-#Add sample_id to each dataset
-for(i in names(amr_meta)) {
-  amr_meta[[i]]$SampleId<-rownames(amr_meta[[i]])
-}
-
-#Merge to grab metadata
-amr_meta<-lapply(amr_meta,function(x){ left_join(x,metadata[c("SampleId","CaseOrControl","FarmId","DIM","Batch")],by="SampleId") %>%
-      dplyr::select("SampleId","CaseOrControl","FarmId","DIM","Batch") %>%  #keep only metadata
-      column_to_rownames("SampleId") }  #Add rownames back
-                   )
 
 
 
@@ -241,7 +268,33 @@ amr_meta<-lapply(amr_meta,function(x){ left_join(x,metadata[c("SampleId","CaseOr
 #####START PCA SECTION
 #####
 
-###Apply CLR normalization to amr object
+###Apply CLR normalization to SPLIT amr object
+amr_clr<-lapply(amr_farm$mechanism,function(x) as.data.frame(clr(x)) )
+
+#Apply PCA to clr-transformed data
+amr_pca<-lapply(amr_clr,function(x) prcomp(x)) #use only numeric values
+
+A<-autoplot(amr_pca$`Farm A`,data = amr_farm_meta$`Farm A`,colour = "DIM") + scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") + theme_minimal()
+            #loadings=T,loadings.label=T,loadings.size=0.1,loadings.label.size=2,loadings.color="blue",loadings.label.color="black")
+B<-autoplot(amr_pca$`Farm B`,data = amr_farm_meta$`Farm B`,colour = "DIM") + scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") + theme_minimal()
+C<-autoplot(amr_pca$`Farm C`,data = amr_farm_meta$`Farm C`,colour = "DIM") + scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") + theme_minimal()
+D<-autoplot(amr_pca$`Farm D`,data = amr_farm_meta$`Farm D`,colour = "DIM") + scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") + theme_minimal()
+
+
+ggarrange(A,B,C,D,common.legend = T,legend="right")
+
+
+
+
+
+
+
+
+
+
+
+###FULL DATASET
+###Apply CLR normalization to FULL amr object
 amr_clr<-lapply(amr_list,function(x) as.data.frame(clr(x)) )
 
 #Apply PCA to clr-transformed data
@@ -281,26 +334,54 @@ autoplot(amr_pca$group,data = amr_meta$group,colour = "DIM") +
 
 
 
+
+
 #######################PERMANOVA
 #prcomp used for running PCA
 #Aitchison Distance matrix was computed using the vegdist function in ‘vegan’
 #Aitchison distance matrix (euclidean distance of a centered-log ratio scaled abundance matrix) was computed and used as input to the adonis function in the ‘vegan’ package.
 #test if the differences between time period distance were greater than those within-time distances using the adonis function in ‘vegan’
 
-amr_dist<-lapply(amr_list, function(x) vegdist(as.data.frame(clr(x)),method="euclidean") )
 
-amr_test<-lapply(amr_dist,function(x) adonis2(x ~ DIM + CaseOrControl + FarmId + Batch,data=amr_meta$mechanism,method = "aitchison",parallel=4))
+#SPLIT DATASET
+amr_dist<-lapply(amr_farm$mechanism, function(x) vegdist(as.data.frame(clr(x)),method="euclidean") )
+
+amr_test<-lapply(amr_dist,function(x) adonis2(x ~ DIM + CaseOrControl + Batch,data=amr_farm_meta,method = "aitchison",parallel=4))
+
+amr_test_list<-list()
+for(i in names(amr_dist)){
+  amr_test<-adonis2(amr_dist[[i]] ~ DIM + CaseOrControl + Batch,data=amr_farm_meta[[i]],method = "aitchison",parallel=4)
+  amr_test_list[[i]]<-amr_test
+}
+
+amr_test_list
+
+###Conclusion
+#Days in Milk is significant for all 4 farms
+#Days in Milk explains 2-4% of the variance in the farms
+#CaseOrControl is significant for Farm D ONLY
+#No notable batch effects
+
+
+
+
+#FULL DATASET
+#amr_dist<-lapply(amr_list, function(x) vegdist(as.data.frame(clr(x)),method="euclidean") )
+
+#amr_test<-lapply(amr_dist,function(x) adonis2(x ~ DIM + CaseOrControl + FarmId + Batch,data=amr_meta$mechanism,method = "aitchison",parallel=4))
 
 #Adonis PERMANOVA test results
-amr_test$mechanism
-amr_test$class
-amr_test$group
+#amr_test$mechanism
+#amr_test$class
+#amr_test$group
 
 #All independent variables are significant
 #FarmId explains roughly 8% of variance
 #DIM explains roughly 0.5-0.6% of variance
 #CaseOrControl explains roughly 0.3% of variance
 #Minimal batch effects
+
+
 
 
 
@@ -315,26 +396,28 @@ aldex_amr<- function(amr_list,amr) {
   amrdf$SampleId<-rownames(amrdf)
  
   #Join on metadata to get Case/Control status
-  CorC<-amrdf %>% left_join(metadata[c("SampleId","CaseOrControl")],by=c("SampleId") ) %>% 
-    dplyr::select('SampleId','CaseOrControl')  #Extract CaseOrControl in correct order for ALDEX2
-  CorC
+  CorC<-amrdf %>% left_join(metadata[c("SampleId","CaseOrControl","DIM")],by=c("SampleId") ) %>% 
+    mutate("Calving" = ifelse(DIM>=0,"Postnatal","Prenatal")) %>% 
+    dplyr::select('SampleId','CaseOrControl',"Calving")  #Extract CaseOrControl in correct order for ALDEX2
+    
+  #CorC
 
-  
   #Transpose class dataframe and exclude SampleId column
   aldex_classdf<-t( amrdf[-c(which(colnames(amrdf) == "SampleId"))] )
-  
-  class.aldex <- aldex(aldex_classdf, CorC$CaseOrControl, mc.samples=128, test="t", effect=TRUE, 
+
+    
+  class.aldex <- aldex(aldex_classdf, CorC$Calving, mc.samples=50, test="t", effect=TRUE, 
                        include.sample.summary=FALSE, denom="all", verbose=FALSE, paired.test=T, gamma=NULL)
   
   
   #Plot 3 significance testing graphs
   par(mfrow=c(1,3))
   aldex.plot(class.aldex, type="MA", test="welch", xlab="Log-ratio abundance",
-             ylab="Difference", main='Bland-Altman plot',called.cex = 3 )
+             ylab="Difference", main='Bland-Altman plot',called.cex = 1 )
   aldex.plot(class.aldex, type="MW", test="welch", xlab="Dispersion",
-             ylab="Difference", main='Effect plot',called.cex = 3)
+             ylab="Difference", main='Effect plot',called.cex = 1)
   aldex.plot(class.aldex, type="volcano", test="welch", xlab="Difference",
-             ylab="-1(log10(q))", main= 'Volcano plot',ylim = c(0,1.5),xlim = c(-2,2),called.cex = 3)  #volcano plot
+             ylab="-1(log10(q))", main= 'Volcano plot',called.cex = 1) #ylim = c(0,1.5),xlim = c(-2,2)  #volcano plot
   #mtext(paste(toupper(amr),"Signficance Plots"), side = 3,line=2, outer = TRUE)     #Add title with amr type
   
   
