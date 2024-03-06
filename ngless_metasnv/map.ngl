@@ -1,0 +1,36 @@
+# ngless script to map metagenomic reads against a species reference database
+# ARGV[1] and ARGV[2] are command line arguments passed to script, see below
+# ARGV[1] is the directory where the input metagenomic fastq files are stored
+# ARGV[2] is a file of file names, with one input file base name per line (such as “sample1” if there were two input files: sample1_R1.fq and sample1_R2.fq)
+
+ngless "1.1"
+import "parallel" version "0.6"
+import "mocat" version "0.0"
+import "samtools" version "0.0"
+
+#ARGV[1] = '/scratch.global/elder099/Noyes_Project_019/all_pools/NonHostFastq'
+#ARGV[2] = '/scratch.global/elder099/Noyes_Project_019/all_pools/file_name_final.txt'
+samples = readlines(ARGV[2])
+# grab one input sample to process
+sample = lock1(samples)
+# adjust naming scheme as required here:
+input = paired(ARGV[1] + '/' + sample + '.non.host.R1.fastq.gz', ARGV[1] + '/' + sample + '.non.host.R2.fastq.gz')
+
+fastaRefDb="/home/noyes046/shared/databases/megares_v2.0/megares_full_database_v2.00.fasta"
+
+mapped = map(input, fafile= fastaRefDb, mode_all=True)
+# only keep mappings with at least 97% identity and 45 bp length
+mapped = select(mapped) using |mr|:
+ mr = mr.filter(min_match_size=45, min_identity_pc=97, action={unmatch})
+
+# only keep reads that mapped uniquely (discard multi-mappers)
+mapped_unique = select(mapped, keep_if=[{mapped}, {unique}])
+mapped_unique = samtools_sort(mapped_unique)
+write(mapped_unique, ofile='outputs/' + sample + '.unique.sorted.bam')
+
+collect(qcstats({fastq}), ofile='cdiffGenus_fqstats.txt', current=sample, allneeded=samples)
+collect(qcstats({mapping}), ofile='cdiffGenus_mapstats.txt', current=sample, allneeded=samples)
+
+
+
+
