@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r}
+```{r,message=F}
 library(ggfortify)
 #library(compositions)
 library(stats)
@@ -334,46 +334,50 @@ When colored by Case or Control, there is no obvious change in AMR composition f
 
 
 
-#### Full PCA (deprecated)
+#### Full PCA (no farm stratification)
 ```{r}
-# ###FULL DATASET
-# ###Apply CLR normalization to FULL amr object
-# amr_clr<-lapply(amr_list,function(x) as.data.frame(clr(x)) )
-# 
-# #Apply PCA to clr-transformed data
-# amr_pca<-lapply(amr_clr,function(x) prcomp(x)) #use only numeric values
-# 
-# #Relevant loadings: 
-# loadingvec<-c("Copper_resistance_protein","Lincosamide_nucleotidyltransferases","Iron_resistance_protein","Tetracycline_resistance_ribosomal_protection_proteins","RNA-polymerase_binding_protein",
-#               "Drug_and_biocide_SMR_efflux_pumps","Drug_and_biocide_RND_efflux_pumps","Tetracycline_resistance_MFS_efflux_pumps","Multi-metal_resistance_protein","Sulfonamide-resistant_dihydropteroate_synthases")
-# 
-# 
-# #PCA plot with loadings
-# p<-autoplot(amr_pca$mechanism,data = amr_meta$mechanism,colour = "DIM",
-#             loadings=T,loadings.label=T,loadings.size=0.1,loadings.label.size=2,loadings.color="blue",loadings.label.color="black") +
-#   scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") + theme_minimal() +
-#   facet_wrap(~FarmId)
-# 
-# #Keep only the top 5 loadings
-# p$layers[[2]]$data<-p$layers[[2]]$data[loadingvec,]
-# p$layers[[3]]$data<-p$layers[[3]]$data[loadingvec,]
-# #Change loading width
-# p$layers[[2]]$aes_params$size <- 0.2
-# p
-# 
-# #Other autoplots sans loadings
-# autoplot(amr_pca$class,data = amr_meta$class,colour = "DIM") +
-#   scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") +
-#   facet_wrap(~FarmId)
-# autoplot(amr_pca$group,data = amr_meta$group,colour = "DIM") +
-#   scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") +
-#   facet_wrap(~FarmId)
-# 
-# 
-# #Editors note:
-# #Chris used negative binomial model to associate S. aureus vs other taxa
-# #Also used the model w/emmeans to calculate *adjusted OTU abundances* How? What does this mean?
-# #Came up with adjusted richness/diversity metrics
+###FULL DATASET
+###Apply CLR normalization to FULL amr object
+amr_clr<-lapply(amr_list,function(x) as.data.frame(clr(x)) )
+
+#Apply PCA to clr-transformed data
+amr_pca<-lapply(amr_clr,function(x) prcomp(x)) #use only numeric values
+
+#Relevant loadings:
+loadingvec<-c("Copper_resistance_protein","Lincosamide_nucleotidyltransferases","Iron_resistance_protein","Tetracycline_resistance_ribosomal_protection_proteins","RNA-polymerase_binding_protein",
+              "Drug_and_biocide_SMR_efflux_pumps","Drug_and_biocide_RND_efflux_pumps","Tetracycline_resistance_MFS_efflux_pumps","Multi-metal_resistance_protein","Sulfonamide-resistant_dihydropteroate_synthases")
+
+
+#PCA plot with loadings
+p<-autoplot(amr_pca$mechanism,data = amr_meta,colour = "DIM",
+            loadings=T,loadings.label=T,loadings.size=0.1,loadings.label.size=2,loadings.color="blue",loadings.label.color="black") +
+  scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") + theme_minimal() +
+  facet_wrap(~FarmId)
+
+#Keep only the top 5 loadings
+p$layers[[2]]$data<-p$layers[[2]]$data[loadingvec,]
+p$layers[[3]]$data<-p$layers[[3]]$data[loadingvec,]
+#Change loading width
+p$layers[[2]]$aes_params$size <- 0.2
+p
+
+
+
+#Full dataset plots sans loadings
+autoplot(amr_pca$mechanism,data = amr_meta,colour = "DIM") +
+  scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") + theme_minimal() +
+  facet_wrap(~FarmId) + ggtitle("All-Farm Split PCA Plot") + theme(plot.title = element_text(hjust=0.5))
+autoplot(amr_pca$mechanism,data = amr_meta,colour = "DIM") +
+  scale_color_gradient2(midpoint=0,low="royalblue4",mid="brown2",high="yellow") + theme_minimal() +
+  ggtitle("All-Farm Full PCA Plot") + theme(plot.title = element_text(hjust=0.5))
+
+autoplot(amr_pca$mechanism,data = amr_meta,colour = "FarmId") +
+  scale_color_manual(values = c("gold","brown2","magenta4","royalblue4"))
+
+#Editors note:
+#Chris used negative binomial model to associate S. aureus vs other taxa
+#Also used the model w/emmeans to calculate *adjusted OTU abundances* How? What does this mean?
+#Came up with adjusted richness/diversity metrics
 ```
 
 
@@ -411,12 +415,12 @@ amr_test_list
 
 
 #FULL DATASET
-#amr_dist<-lapply(amr_list, function(x) vegdist(as.data.frame(clr(x)),method="euclidean") )
+amr_dist<-lapply(amr_list, function(x) vegdist(as.data.frame(clr(x)),method="euclidean") )
 
-#amr_test<-lapply(amr_dist,function(x) adonis2(x ~ DIM + CaseOrControl + FarmId + Batch,data=amr_meta$mechanism,method = "aitchison",parallel=4))
+amr_test<-lapply(amr_dist,function(x) adonis2(x ~ DIM + CaseOrControl + FarmId + Batch,data=amr_meta,method = "aitchison",parallel=4))
 
 #Adonis PERMANOVA test results
-#amr_test$mechanism
+amr_test$mechanism
 #amr_test$class
 #amr_test$group
 
@@ -460,6 +464,11 @@ aldex_amr<- function(amr_list,amr,farm) {
   
   return(listy)
 }
+amr_farm_meta$`Farm A`$Calving[1]
+amr_farm_meta$`Farm B`$Calving[1]
+amr_farm_meta$`Farm C`$Calving[1]
+amr_farm_meta$`Farm D`$Calving[1]
+farmc$volcano
 
 
 #Create data structures for each farm
@@ -467,7 +476,10 @@ farma<-aldex_amr(amr_farm,"mechanism","Farm A")
 farmb<-aldex_amr(amr_farm,"mechanism","Farm B")
 farmc<-aldex_amr(amr_farm,"mechanism","Farm C")
 farmd<-aldex_amr(amr_farm,"mechanism","Farm D")
-#farma$volcano
+
+
+#View(farma$class.aldex)
+
 
 aplot<-ggplot(data=farma$class.aldex,aes(x=diff.btw,y=-log10(we.eBH))) + 
   geom_point(aes(colour=(diff.btw>=2 | diff.btw<=-2) & we.eBH<0.05 ),shape=1) +
@@ -512,7 +524,15 @@ dplot<-ggplot(data=farmd$class.aldex,aes(x=diff.btw,y=-log10(we.eBH))) +
 
 ggarrange(aplot,bplot,cplot,dplot)
 
+aplot
+bplot
+cplot
+dplot
 
+farma$volcano
+farmb$volcano
+farmc$volcano
+farmd$volcano
 
 
 
