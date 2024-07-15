@@ -1,0 +1,24 @@
+#!/bin/bash
+
+
+
+#database='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/staphA_reference/ncbi_dataset/data/GCF_000013425.1/StaphA_reference.fasta'
+#reads='/scratch.global/fermx014/data/elder099/Noyes_Project_019/NonHostFastq'
+straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
+reads="$straindir/test_reads"
+reads='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/test_reads'
+filenames="$straindir/final_read_list.txt"
+#filenames='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/final_read_list.txt'
+#filenames='/scratch.global/elder099/StaphA/final_file_names.txt'
+#align='/scratch.global/elder099/StaphA/bwa_output'
+
+#for ((i=1;i<=10;i++))
+cat $filenames | while read file
+do
+       # ngless map.ngl -j 32 /scratch.global/fermx014/data/elder099/Noyes_Project_019/NonHostFastq /scratch.global/elder099/StaphA/final_file_names.txt
+        echo "$file"
+	
+	spades.py --meta -1 $reads/$file.R1.fastq.gz -2 $reads/$file.R2.fastq.gz -o $straindir/spades_output
+
+      # echo $i
+done
