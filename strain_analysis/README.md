@@ -26,3 +26,13 @@ Finished assembly of USDA USDA871_S124.non.host reads. Next step is to test them
  * Assembly graph in GFA format is in /home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/spades_output/assembly_graph_with_scaffolds.gfa
 
 ======= SPAdes pipeline finished.
+
+Completed QC of assemblies using QUAST. 2024-07-19
+
+Finished binning of USDA USDA871_S124.non.host reads. Next step is to dereplicate all bins (each bin?). 2024-08-10
+ * Bin output of MetaWrap (which ran Metabat2) is in: /home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/binning_round1/metabat2_bins/.fa
+ * All bins are multi-fastas in one directory
+ * MetaWrap doesn't work with zipped reads, may need to pick another tool later -- runtime around 25 mins for one samples at 50 cpus
+ * dRep failed when running on one bin, and subsequently failed when using multiple
+ * dRep in strains conda env
+
