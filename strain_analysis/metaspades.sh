@@ -13,12 +13,14 @@ filenames="$straindir/final_read_list.txt"
 conda activate strains
 
 #for ((i=1;i<=10;i++))
-cat $filenames | while read file
+#cat $filenames | while read file
+tail $filenames -n +2 | while read file
 do
        # ngless map.ngl -j 32 /scratch.global/fermx014/data/elder099/Noyes_Project_019/NonHostFastq /scratch.global/elder099/StaphA/final_file_names.txt
         echo "$file"
 	
-	spades.py --meta -t 32 -1 $reads/$file.R1.fastq.gz -2 $reads/$file.R2.fastq.gz -o $straindir/spades_output
-
+	spades.py --meta -t 64 -1 $reads/$file.R1.fastq.gz -2 $reads/$file.R2.fastq.gz -o $straindir/spades_${file}_output
+	
+	#Read online that want to set memory limit high (e.g. 500GB) and fewer threads (e.g. 16)
       # echo $i
 done
