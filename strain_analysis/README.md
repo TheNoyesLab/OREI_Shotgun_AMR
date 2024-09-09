@@ -67,3 +67,13 @@ Notes:
 
 
 Now that I have a dereplicated set of genomes I want to create a phylogeny out of these bins/MAGS. Next step is to try PhyloPhlan or GTDB-tk for phylogenetic placement.
+
+
+2024-09-02
+
+Downloaded GTDB-TK database in /home/noyes046/shared/databases/gtdb-tk/release220
+ - This is a huge database used to assign taxonomic classifications to MAGs/bins
+ - Must route to GTDB-TK database in mamba env't using ' mamba env config vars set GTDBTK_DATA_PATH="/home/noyes046/shared/databases/gtdb-tk/release220" '
+
+Running GTDB-TK classify_wf overnight
+ - gtdb-tk was giving package errors. Requires numpy<1.24 (mamba auto-install 1.24)
