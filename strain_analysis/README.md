@@ -77,3 +77,18 @@ Downloaded GTDB-TK database in /home/noyes046/shared/databases/gtdb-tk/release22
 
 Running GTDB-TK classify_wf overnight
  - gtdb-tk was giving package errors. Requires numpy<1.24 (mamba auto-install 1.24)
+
+2024-09-09
+
+GTDB-TK finished running
+ - output directory at:/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/gtdb-tk_output
+
+GTDB-TK output:
+ - output includes a summary file of all classifications: gtdbtk.bac120.summary.tsv
+ - Also includes trees in /classify/ but trees aren't very useful...
+   - Trees dropped into iTOL don't show input genomes (even though they should)
+   - Known to be buggy, not intended to be used as a tree builder
+
+Next steps:
+Use FastTree to create a phylogenetic tree using output MSA from GTDB-TK
+ - Output alignment at: gtdbtk.bac120.msa.fasta.gz (includes submitted and reference genomes)
