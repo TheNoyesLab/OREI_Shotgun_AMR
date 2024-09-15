@@ -92,3 +92,16 @@ GTDB-TK output:
 Next steps:
 Use FastTree to create a phylogenetic tree using output MSA from GTDB-TK
  - Output alignment at: gtdbtk.bac120.msa.fasta.gz (includes submitted and reference genomes)
+
+
+2024-09-14
+
+Ran FastTree on both all genome MSA and user-only MSA
+ - Confusingly, only 5 bins included in user-only MSA
+ - All genome MSA takes several hours to run (huge reference database?)
+ - user-only tree looks great, but doesn't includes samples I think should be
+   - possibly excluded due to some bins having no marker genes
+ - Two kinds of Ornithinimicrobium kibberense found 
+
+
+ 
