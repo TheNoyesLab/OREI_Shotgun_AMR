@@ -104,4 +104,19 @@ Ran FastTree on both all genome MSA and user-only MSA
  - Two kinds of Ornithinimicrobium kibberense found 
 
 
+2024-10-05 & 2023-10-07
+
+Working on file structure/maintenance and systematizing scripts
+ - Binning step: *Success* ($straindir/binning_v3)
+   - Switched to directly running MetaBat2
+   - Got it to work on fastq.gz
+   - organized files
+   - Fixed naming to fit dRep
+ - Dereplication step *Success* ($straindir/binning_v3i/dRep_output)
+   - systematized to loop through each sample's bins to create a list for dRep
+
+Next Steps:
+ - Finish read concatenation by coassembly group
+ - File management for Metaspades (remove K## directories and others)
+ - Establish coassembly input for Metaspades
  
