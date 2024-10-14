@@ -119,4 +119,20 @@ Next Steps:
  - Finish read concatenation by coassembly group
  - File management for Metaspades (remove K## directories and others)
  - Establish coassembly input for Metaspades
- 
+
+
+2024-11-14:
+
+Wrapping up coassembly algorithm
+ - Established coReads at $straindir/test_reads/coReads
+   - coReads should be labled 'sample1_sample2_samplen.non.host.R[12].fastq.gz' 
+   - loops through test cow group
+ - MetaSPADES runs individual and coReads
+   - currently running sans problems
+ - High-level data structure reorganization
+   - establish run directory and assembly directories
+
+Next Steps:
+ - Complete assembly
+ - Run binning on all assembly/coassembly directories
+ - Expand to additional binners (e.g. concoct) (optional)
