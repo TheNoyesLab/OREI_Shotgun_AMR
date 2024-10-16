@@ -121,7 +121,7 @@ Next Steps:
  - Establish coassembly input for Metaspades
 
 
-2024-11-14:
+2024-10-14:
 
 Wrapping up coassembly algorithm
  - Established coReads at $straindir/test_reads/coReads
@@ -136,3 +136,18 @@ Next Steps:
  - Complete assembly
  - Run binning on all assembly/coassembly directories
  - Expand to additional binners (e.g. concoct) (optional)
+
+
+2024-10-16:
+
+Upgrading binning code
+ - Loop binning tool through indiv_assemblies and coassemblies
+ - Expand binning tools to Maxbin2
+   - Wrote code, but haven't tested yet
+   - Adjusted directory structure to have folder for each binner
+ - dRep loops through indiv_bins and cobins
+
+Next Steps:
+ - Test current binners Metabat2, Maxbin2
+ - Expand to additional binners (e.g. concoct, DasTool)
+ - Run e.g. dRep, gtdbtk on Metabat2 bins

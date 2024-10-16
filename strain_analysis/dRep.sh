@@ -2,10 +2,24 @@
 
 #Establish file paths
 
-assembly="/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/spades_output/K55/scaffolds.fasta"
+#assembly="/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/spades_output/K55/scaffolds.fasta"
+#straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
+#test_reads='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/test_reads'
+#filenames="$straindir/final_read_list.txt"
+
+#database='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/staphA_reference/ncbi_dataset/data/GCF_000013425.1/StaphA_reference.fasta'
+#reads='/scratch.global/fermx014/data/elder099/Noyes_Project_019/NonHostFastq'
 straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
-test_reads='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/test_reads'
-filenames="$straindir/final_read_list.txt"
+rundir="$straindir/coassembly_run_v4"
+assemblies="$rundir/assemblies"
+reads="$straindir/test_reads"
+coReads="$reads/coReads"
+indiv_reads="$rundir/indiv_read_list.txt"
+coRead_list="$rundir/coRead_list.txt"
+all_read_list="$rundir/final_read_list.txt"
+binning="$rundir/binning"
+work="$binning/work_files"
+
 
 # Activate conda
 . /home/noyes046/elder099/anaconda3/etc/profile.d/conda.sh
@@ -15,18 +29,20 @@ filenames="$straindir/final_read_list.txt"
 mamba activate strains #dRep is in here
 
 #Create list of bins for input to dRep
-#Future: Edit this so it's a for loop concatting all of the different bin paths
 
-rm -f $straindir/binning_v3/bin_list.txt
+cd $binning
+rm -f bin_list.txt
 
-#Loop through all of the read names
-tail $filenames -n +2 | while read file
+#Loop through all of the read names, including coReads/coBins
+#cat $all_read_list | while read file
+tail $all_read_list -n +2 | while read file
 do
 
 	#No longer need to update names -- fixed upstream
-	cd $straindir/binning_v3/${file}_bins
-	#cd $straindir/binning_v3/USDA898_S127.non.host_bins #do it manually for testing
-	ls -d -1 "$PWD/"*[!unbinned].fa* >> $straindir/binning_v3/bin_list.txt
+	cd $binning/${file}_bins
+
+	#Pull full file path of all successful bins
+	ls -d -1 "$PWD/"*[!unbinned].fa* >> $binning/bin_list.txt
 
 done
 
@@ -44,6 +60,8 @@ done
 #Export list of bins paths to file, overwriting
 #ls -d -1 "$PWD/"*[!unbinned].fa* >> $straindir/binning_898_996/bin_list.txt
 
-dRep dereplicate -p 50 $straindir/binning_v3/dRep_output -g "$straindir/binning_v3/bin_list.txt" -pa 0.95 -sa 0.99
+###Dereplicate Bins 
+#primary clustering 95%, secondary 99%
+dRep dereplicate -p 50 $binning/dRep_output -g "$binning/bin_list.txt" -pa 0.95 -sa 0.99
 
 
