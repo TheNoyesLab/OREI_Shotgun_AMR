@@ -2,10 +2,16 @@
 
 #Establish file paths
 
-assembly="/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/spades_output/K55/scaffolds.fasta"
-straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
-test_reads='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/test_reads'
-final_bins='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/binning_898_996/dRep_output/dereplicated_genomes/'
+straindir='/scratch.global/elder099'
+rundir='/scratch.global/elder099/strains_run_v5'
+reads='/scratch.global/fermx014/help/elder099/Noyes_Project_019/NonHostFastq'
+assemblies="$rundir/assemblies"
+coReads="$reads/coReads"
+indiv_reads="$rundir/indiv_read_list.txt"
+coRead_list="$rundir/coRead_list.txt"
+all_read_list="$rundir/final_read_list.txt"
+binning="$rundir/binning"
+final_bins="$binning/dRep_output/dereplicated_genomes"
 
 
 # Activate conda
@@ -15,4 +21,4 @@ final_bins='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/bi
 #Activate conda environment
 mamba activate mag_taxon #gtdb-tk is here
 
-gtdbtk classify_wf --genome_dir $final_bins --out_dir $straindir/gtdb-tk_output --extension fa --cpus 32 --mash_db $straindir/gtdb-tk_output/mash_db
+gtdbtk classify_wf --genome_dir $final_bins --out_dir $rundir/gtdb-tk_output --extension fa --cpus 60 --mash_db $rundir/gtdb-tk_output/mash_db

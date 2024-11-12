@@ -9,10 +9,16 @@
 
 #database='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/staphA_reference/ncbi_dataset/data/GCF_000013425.1/StaphA_reference.fasta'
 #reads='/scratch.global/fermx014/data/elder099/Noyes_Project_019/NonHostFastq'
-straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
-rundir="$straindir/coassembly_run_v4"
+
+
+#straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
+#rundir="$straindir/coassembly_run_v4"
+
+straindir='/scratch.global/elder099'
+rundir='/scratch.global/elder099/strains_run_v5'
+reads='/scratch.global/fermx014/help/elder099/Noyes_Project_019/NonHostFastq'
 assemblies="$rundir/assemblies"
-reads="$straindir/test_reads"
+#reads="$straindir/test_reads"
 coReads="$reads/coReads"
 indiv_reads="$rundir/indiv_read_list.txt"
 coRead_list="$rundir/coRead_list.txt"
@@ -34,15 +40,27 @@ cd $binning
 rm -f bin_list.txt
 
 #Loop through all of the read names, including coReads/coBins
-#cat $all_read_list | while read file
-tail $all_read_list -n +2 | while read file
+cat $indiv_reads | while read file
+#tail $all_read_list -n +2 | while read file
 do
+	echo $file
 
-	#No longer need to update names -- fixed upstream
-	cd $binning/${file}_bins
+        bin_path="$binning/metabat2/${file}_bins"
+	
+        #Only run binning on existing assemblies
+        if [ -d "$bin_path" ]; then
+	
+		#No longer need to update names -- fixed upstream
+		cd $binning/metabat2/${file}_bins
 
-	#Pull full file path of all successful bins
-	ls -d -1 "$PWD/"*[!unbinned].fa* >> $binning/bin_list.txt
+		#Pull full file path of all successful bins
+		ls -d -1 "$PWD/"*[!unbinned].fa* >> $binning/bin_list.txt
+	
+	else
+                #If not present, do nothing
+                echo "File does not exist!"
+        fi
+
 
 done
 
@@ -62,6 +80,7 @@ done
 
 ###Dereplicate Bins 
 #primary clustering 95%, secondary 99%
-dRep dereplicate -p 50 $binning/dRep_output -g "$binning/bin_list.txt" -pa 0.95 -sa 0.99
+dRep dereplicate -p 80 $binning/dRep_output -g "$binning/bin_list.txt" -pa 0.95 -sa 0.99
+
 
 

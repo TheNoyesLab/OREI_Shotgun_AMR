@@ -38,6 +38,11 @@ cat $indiv_reads | while read file
 do
         echo "$file"
 	
+	#Only run assembly on samples that haven't been run
+	assembly_path="$assemblies/spades_${file}_output"	
+	if [ ! -d "$assembly_path" ]; then
+	
+	#Run assembly w/MEGAHIT
 	megahit -m 0.3 -t 80 -1 $reads/$file.R1.fastq.gz -2 $reads/$file.R2.fastq.gz -o $assemblies/spades_${file}_output 
 	#spades.py --meta -t 128 -1 $reads/$file.R1.fastq.gz -2 $reads/$file.R2.fastq.gz -o $assemblies/spades_${file}_output
 	
@@ -47,14 +52,17 @@ do
 	cd $rundir
 
 	#Read online that want to set memory limit high (e.g. 500GB) and fewer threads (e.g. 16)
-      # echo $i
+      	#echo $i
+      	
       	n=$(($n + 1))
 	if [ $((n % 20)) == 0 ]; then
 		echo $n
 		echo "File $file is done assembling. This is file Number:$n" | mail -s "Assembly Progress" "elder099@umn.edu"
 
 	fi
+	
 
+	fi
 done
 
 
