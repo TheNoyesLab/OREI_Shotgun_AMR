@@ -1,17 +1,21 @@
 #!/bin/bash
 
 #reads='/scratch.global/fermx014/data/elder099/Noyes_Project_019/NonHostFastq'
-straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
-rundir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/coassembly_run_v4'
-test_reads='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/test_reads'
-coReads="$test_reads/coReads"
+#straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
+#rundir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/coassembly_run_v4'
+rundir='/scratch.global/elder099/strains_run_v5'
+#reads='/scratch.global/fermx014/help/elder099/Noyes_Project_019/NonHostFastq'
+reads='/scratch.global/fermx014/data/elder099/elder099_2024-12-10_Noyes_Project_019/NonHostFastq'
+
+#test_reads='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/test_reads'
+coReads="$rundir/coReads"
 
 # Activate conda
 #. /home/noyes046/elder099/anaconda3/etc/profile.d/conda.sh
 #. /home/noyes046/elder099/anaconda3/etc/profile.d/mamba.sh
 
 #Make coReads directory
-cd $test_reads
+cd $rundir
 mkdir -p coReads
 
 ###Read in csv file with groupings
@@ -22,37 +26,49 @@ if [ -f "$rundir/coassembly_groupR1.txt" ] ; then
     rm "$rundir/coassebmly_groupR2.txt"
 fi
 
-for i in {1..10} #Loop through each cow group (317 groups)
+for i in {1..317} #Loop through each cow group (317 groups)
 do
 	#Read through CSV file
-	#cat $rundir/cow_coassembly_groups.csv | while IFS="," read -r col1 col2 col3 col4 col5
-	cat $rundir/test_coassembly_groups.csv | while IFS="," read -r col1 col2 col3 col4 col5
+	cat $rundir/cow_coassembly_groups.csv | while IFS="," read -r col1 col2 col3 col4 col5
 	do
 		#Output column 2 (Sample ID) and append to file
 		if [ $col1 = $i ]; then
-			#echo $test_reads/${col2}.non.host.R1.fastq.gz
-			echo $col2 | tr -d '"' >> $rundir/coassembly_group.txt
-			echo $test_reads/${col2}.non.host.R1.fastq.gz | tr -d '"' >> $rundir/coassembly_groupR1.txt
-			echo $test_reads/${col2}.non.host.R2.fastq.gz | tr -d '"' >> $rundir/coassembly_groupR2.txt
+			#echo $reads/${col2}.non.host.R1.fastq.gz
+			#Search for and Establish the full Sample ID bc metadata only has first half
+			
+			#Fix column, remove quotes
+			col2=$(echo $col2 | tr -d '"')
+			
+			fullname1=$(ls $reads/ | grep ${col2}_.*.non.host.R1.fastq.gz)
+			fullname2=$(ls $reads/ | grep ${col2}_.*.non.host.R2.fastq.gz)
+			echo "Concatenating Group # $i"
+			echo $fullname1
+			#echo $fullname2
+			#ls $reads | grep ${col2}_.*.non.host.R2.fastq.gz
 
+			echo $col2 | tr -d '"' >> $rundir/coassembly_group.txt
+			echo $reads/${fullname1} | tr -d '"' >> $rundir/coassembly_groupR1.txt
+			echo $reads/${fullname2} | tr -d '"' >> $rundir/coassembly_groupR2.txt
+			#echo $reads/${col2}_*.non.host.R1.fastq.gz | tr -d '"' >> $rundir/coassembly_groupR1.txt
+			#echo $reads/${col2}_*.non.host.R2.fastq.gz | tr -d '"' >> $rundir/coassembly_groupR2.txt
     		fi
 		
 
 	done
 
-
+#ls /scratch.global/fermx014/data/elder099/elder099_2024-12-10_Noyes_Project_019/NonHostFastq/ | grep USDA1683_.*.non.host.R1.fastq.gz
 	#Concatenate reads for each existing group
 	if [ -f "$rundir/coassembly_groupR1.txt" ] ; then
 		echo "next"
 
-		cat $rundir/coassembly_group.txt
-		cat $rundir/coassembly_groupR1.txt
-		cat $rundir/coassembly_groupR2.txt
+		#cat $rundir/coassembly_group.txt
+		#cat $rundir/coassembly_groupR1.txt
+		#cat $rundir/coassembly_groupR2.txt
 	        
 		###Algo for concatenating reads
         	#cat (list of reads in each group here)
         	coread_name=$(cat $rundir/coassembly_group.txt | tr '\n' '_')
-		echo $coread_name
+		#echo $coread_name
 
 		#Concatenate forward and reverse reads
 		xargs cat < $rundir/coassembly_groupR1.txt > $coReads/${coread_name}.non.host.R1.fastq.gz
