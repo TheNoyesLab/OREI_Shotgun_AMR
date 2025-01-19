@@ -6,16 +6,12 @@
 #SBATCH --mail-type=END 
 #
 
-straindir='/scratch.global/elder099'
 rundir='/scratch.global/elder099/strains_run_v5'
 assemblies="$rundir/assemblies"
 coassemblies="$assemblies/coassemblies"
-#reads='/scratch.global/fermx014/help/elder099/Noyes_Project_019/NonHostFastq'
 reads='/scratch.global/fermx014/data/elder099/elder099_2024-12-10_Noyes_Project_019/NonHostFastq'
-#coReads="$reads/coReads"
 coReads="$rundir/coReads"
 indiv_reads="$rundir/indiv_read_list.txt"
-#indiv_reads="$rundir/tmp_read_list.txt"
 coRead_list="$rundir/coRead_list.txt"
 
 # Activate conda

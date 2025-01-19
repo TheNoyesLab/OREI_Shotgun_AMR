@@ -5,8 +5,9 @@
 straindir='/scratch.global/elder099'
 rundir='/scratch.global/elder099/strains_run_v5'
 reads='/scratch.global/fermx014/help/elder099/Noyes_Project_019/NonHostFastq'
+coReads="$rundir/coReads"
 assemblies="$rundir/assemblies"
-coReads="$reads/coReads"
+coassemblies="$assemblies/coassemblies"
 indiv_reads="$rundir/indiv_read_list.txt"
 coRead_list="$rundir/coRead_list.txt"
 all_read_list="$rundir/final_read_list.txt"

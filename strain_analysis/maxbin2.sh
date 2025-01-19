@@ -1,20 +1,9 @@
 #!/bin/bash
 
 #Establish file paths
-
-
-#straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
-#test_reads='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/test_reads'
-#assembly="/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/spades_output/K55/scaffolds.fasta"
-#reads="$straindir/test_reads" 
-#filenames="$straindir/final_read_list.txt" 
-
-
-#database='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/staphA_reference/ncbi_dataset/data/GCF_000013425.1/StaphA_reference.fasta'
-#reads='/scratch.global/fermx014/data/elder099/Noyes_Project_019/NonHostFastq'
-straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
 rundir="$straindir/coassembly_run_v4"
 assemblies="$rundir/assemblies"
+coassemblies="$assemblies/coassemblies"
 reads="$straindir/test_reads"
 coReads="$reads/coReads"
 indiv_reads="$rundir/indiv_read_list.txt"

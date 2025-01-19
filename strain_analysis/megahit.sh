@@ -1,19 +1,13 @@
 #!/bin/bash
 
 
-
-#database='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/staphA_reference/ncbi_dataset/data/GCF_000013425.1/StaphA_reference.fasta'
-#reads='/scratch.global/fermx014/data/elder099/Noyes_Project_019/NonHostFastq'
-straindir='/scratch.global/elder099'
+#Establish directories
 rundir='/scratch.global/elder099/strains_run_v5'
-#straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
-#rundir="$straindir/coassembly_run_v4"
 assemblies="$rundir/assemblies"
-#reads="$straindir/test_reads"
+coassemblies="$assemblies/coassemblies"
 reads='/scratch.global/fermx014/help/elder099/Noyes_Project_019/NonHostFastq'
-coReads="$reads/coReads"
+coReads="$rundir/coReads"
 indiv_reads="$rundir/indiv_read_list.txt"
-#indiv_reads="$rundir/tmp_read_list.txt"
 coRead_list="$rundir/coRead_list.txt"
 
 # Activate conda
@@ -29,7 +23,6 @@ mkdir -p assemblies
 
 
 ###MEGAHIT individual reads assembly
-#for ((i=1;i<=10;i++))
 #iterator
 n=1
 
@@ -51,8 +44,6 @@ do
 	rm -fr intermediate_contigs
 	cd $rundir
 
-	#Read online that want to set memory limit high (e.g. 500GB) and fewer threads (e.g. 16)
-      	#echo $i
       	
       	n=$(($n + 1))
 	if [ $((n % 20)) == 0 ]; then

@@ -1,27 +1,12 @@
 #!/bin/bash
 
 #Establish file paths
-
-
-#straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
-#test_reads='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/test_reads'
-#assembly="/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis/spades_output/K55/scaffolds.fasta"
-#reads="$straindir/test_reads" 
-#filenames="$straindir/final_read_list.txt" 
-
-
-#database='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/staphA_reference/ncbi_dataset/data/GCF_000013425.1/StaphA_reference.fasta'
-#reads='/scratch.global/fermx014/data/elder099/Noyes_Project_019/NonHostFastq'
-#straindir='/home/noyes046/elder099/OREI_Shotgun_AMR_Analyses/strain_analysis'
-#rundir="$straindir/coassembly_run_v4"
-straindir='/scratch.global/elder099'
 rundir='/scratch.global/elder099/strains_run_v5'
 reads='/scratch.global/fermx014/help/elder099/Noyes_Project_019/NonHostFastq'
 assemblies="$rundir/assemblies"
-#reads="$straindir/test_reads"
-coReads="$reads/coReads"
+coassemblies="$assemblies/coassemblies"
+coReads="$rundir/coReads"
 indiv_reads="$rundir/indiv_read_list.txt"
-#indiv_reads="$rundir/tmp_read_list.txt"
 coRead_list="$rundir/coRead_list.txt"
 binning="$rundir/binning"
 work="$binning/work_files"
@@ -35,14 +20,12 @@ work="$binning/work_files"
 mamba activate metawrap #Change this once conda is fixed
 
 
-#metawrap binning -o $straindir/binning_round1 -t 50 -a $assembly --metabat2 $test_reads/USDA871_S124.non.host.R_1.fastq $test_reads/USDA871_S124.non.host.R_2.fastq
 mkdir -p "$rundir/binning"
 
 
 #####
 #####BINNING INDIVIDUAL ASSEMBLIES
 #####
-#for ((i=1;i<=10;i++))
 cat $indiv_reads | while read file
 #tail $indiv_reads -n +2 | while read file
 do
